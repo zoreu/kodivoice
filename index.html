@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Voz Kodi</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #222; color: #fff; text-align: center; }
+        button { width: 200px; height: 200px; border-radius: 50%; background: #00a8e1; color: white; border: none; font-size: 24px; font-weight: bold; margin-top: 50px; }
+        button:active { background: #008cc0; }
+        #status { margin-top: 20px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <h1>Fale com o Kodi</h1>
+    <input type="text" id="kodiIp" value="192.168.0.100" placeholder="IP do Kodi" style="width: 80%; padding: 10px; margin-bottom: 10px;">
+    <br>
+    <button id="speakBtn">🎤</button>
+    <div id="status">Clique e fale</div>
+
+    <script>
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'pt-BR';
+        recognition.interimResults = false;
+
+        const statusDiv = document.getElementById('status');
+        const ipInput = document.getElementById('kodiIp');
+
+        document.getElementById('speakBtn').onclick = () => {
+            recognition.start();
+            statusDiv.innerText = "Ouvindo...";
+        };
+
+        recognition.onresult = (event) => {
+            const text = event.results[0][0].transcript;
+            statusDiv.innerText = `Você disse: "${text}"`;
+            
+            const ip = ipInput.value;
+            const url = `http://${ip}:8088/cmd?text=${encodeURIComponent(text)}`;
+
+            fetch(url)
+                .then(r => r.text())
+                .then(resp => {
+                    statusDiv.innerText += ` | Kodi: ${resp}`;
+                })
+                .catch(err => {
+                    statusDiv.innerText += ` | Falha na conexão`;
+                });
+        };
+
+        recognition.onerror = (event) => {
+            statusDiv.innerText = "Erro de reconhecimento: " + event.error;
+        };
+    </script>
+</body>
+</html>
